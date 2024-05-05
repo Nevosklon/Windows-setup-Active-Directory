@@ -1,20 +1,20 @@
 
 $RegAdd=[ordered]@{
 	"HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization"=@(
-		@{name="NoLockScreen"; type="DWORD"; value=1}
+		@{name="NoLockScreen"; type="DWord"; value=1}
 	);
 	"HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"=@(
-		@{name="DisallowShaking"; type="DWORD"; value=1}
+		@{name="DisallowShaking"; type="DWord"; value=1}
 	);
 	"HKCU:\SOFTWARE\Policies\Microsoft\Windows\Personalization"=@(
-		@{name="AppsUseLightTheme"; type="DWORD"; value=0},
-		@{name="SystemUseLightTheme"; type="DWORD"; value=0}
+		@{name="AppsUseLightTheme"; type="DWord"; value=0},
+		@{name="SystemUseLightTheme"; type="DWord"; value=0}
 	);
 	"HKCU:\Control Panel\Desktop"=@(
 		@{name="MenuShowDelay"; type="String"; value=0}
 	);
 	"HKCU:\Software\Policies\Microsoft\Windows\Explorer"=@(
-		@{name="DisableSearchBoxSuggestions"; type="DWORD"; value=1}
+		@{name="DisableSearchBoxSuggestions"; type="DWord"; value=1}
 	);
 	"HKCR:\DesktopBackground\Shell\powershell\command"=@(
 		@{name="(Default)"; type ="String"; value="C:\Windows\System32\WindowsPowerShell\v1.0"}
@@ -53,7 +53,7 @@ function Reg-AddItem{
 		$name = $v["name"] 
 		$value = ($v["value"])
 		New-ItemProperty -PropertyType $type -Path $path -Name $name -Value $value -Verbose
-		
+		Set-ItemProperty -Type $type -Path $path -Name $name -Value $value -Verbose
 		# TODO: check for property exist and modify values
 	}
 
