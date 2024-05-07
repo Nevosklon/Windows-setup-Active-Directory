@@ -1,7 +1,12 @@
-$IPAddress = Read-Host "Enter Server IPv4 address"
+function main {
+	$IPAddress = Read-Host "Enter Server IPv4 address"
+	$DOMAIN="Barportestates.com"
+	$USERS=@("Dennis","Anthony")
 
-
-Set-DnsClientServerAddress -ServerAddress $IPAddress -Validate
-if ( $? ) {
-	Write-Host "Failed to set and connect to dns server"
+	Get-NetAdapter | Set-DnsClientServerAddress -Addresses $IPAddress -Validate -Verbose
+	foreach( $user in $USERS ) {
+		Add-Computer -Domain $DOMAIN -$user -Force
+	}
+	Restart-Computer
 }
+main
