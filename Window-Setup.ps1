@@ -1,5 +1,8 @@
+# The Hive rooot path range
+$I_HIVEROOT = 6
 
-$RegAdd=[ordered]@{
+# Regestry key to be modified and added
+$H_HIVE=[ordered]@{
 	"HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization"=@(
 		@{name="NoLockScreen"; type="DWord"; value=1}
 	);
@@ -10,8 +13,13 @@ $RegAdd=[ordered]@{
 		@{name="AppsUseLightTheme"; type="DWord"; value=0},
 		@{name="SystemUseLightTheme"; type="DWord"; value=0}
 	);
+	"HKCU:\Control Panel\Desktop\WindowMetrics" =@(
+		@{name="MinAnimate"; type="DWord"; value=0}	
+	);
 	"HKCU:\Control Panel\Desktop"=@(
-		@{name="MenuShowDelay"; type="String"; value=0}
+		@{name="MenuShowDelay"; type="String"; value=0},
+		@{name="WallPaper"; type="String"; value=0},
+		@{name="CursorBlinkRate"; type="DWord"; value=-1}
 	);
 	"HKCU:\Software\Policies\Microsoft\Windows\Explorer"=@(
 		@{name="DisableSearchBoxSuggestions"; type="DWord"; value=1}
@@ -24,47 +32,97 @@ $RegAdd=[ordered]@{
 	);	
 }
 
-function Reg-AddKey{
+# Services to be disable
+$A_SERVICES = @("spooler")
+
+function B_HiveRootExist{
 	param(
 		[Parameter(Mandatory=$true)]
-		[string]$Path
+		[String[]]$Path
 	)
-	$PathArray = $Path.Split("\")
-	Write-Host  $Path
-	#Write-Host  $PathArray
-	for( $i = 1; $i -lt $PathArray.Length; $i++) {
-		$path = [system.String]::Join("\", $PathArray[0..($i - 1)])
-		$key = $PathArray[$i]
-		Write-Host "$path"
-		New-Item -Path $path -Name $key
+	return Test-Path $path.Substring(0, $I_HIVEROOT)
+}
+
+function Hive_AddKey{
+	param(
+		[Parameter(Mandatory=$true)]
+		[string]$S_Path
+	)
+	if ( -Not (B_HiveRootExist $S_Path) ) {
+		return
+	}
+
+	$A_Path = $S_Path.Split("\")
+	
+	for( $i = 1; $i -lt $A_Path.Length; $i++) {
 		
+		$S_PathExist = [system.String]::Join("\", $A_Path[0..$i])
+		if (Test-Path $S_PathExist){
+			continue
+		}
+		
+		$S_CurrentPath = [system.String]::Join("\", $A_Path[0..($i - 1)])
+		$S_NewKey = $A_Path[$i]
+		New-Item -Path $S_CurrentPath -Name $S_NewKey
 	}
 	
 }
 
-function Reg-AddItem{
+function Hive_AddItem{
 	param(
 		[Parameter(Mandatory=$true)]
-		[Object]$Items,
-		[String]$path
+		[Object]$H_Items,
+		[String]$S_Path
 	)
-	foreach( $v in $Items) {
-		$type = $v["type"]
-		$name = $v["name"] 
-		$value = ($v["value"])
-		New-ItemProperty -PropertyType $type -Path $path -Name $name -Value $value -Verbose
-		Set-ItemProperty -Type $type -Path $path -Name $name -Value $value -Verbose
-		# TODO: check for property exist and modify values
+	
+	if ( -Not (B_HiveRootExist $S_Path) ) {
+		return
+	}
+	foreach( $O_Item in $H_Items) {
+		$S_Type = $O_Item["type"]
+		$S_Name = $O_Item["name"] 
+		$O_Value = $O_Item["value"]		
+		
+		Get-ItemProperty -Path $S_Path -Name $S_Name 2> $null
+		if ( $? ) {
+		
+			Set-ItemProperty -Type $S_Type -Path $S_Path -Name $S_Name -Value $O_Value -Verbose
+			continue
+		}	
+		New-ItemProperty -PropertyType $S_Type -Path $S_Path -Name $S_Name -Value $O_Value -Verbose
 	}
 
 }
 
-# TODO: reduce error outputs
-foreach($k in $RegAdd.getEnumerator()) {
-	$v = $k.Value
-	$k = $k.Name
+function EditHive {
+	param(
+		[parameter(Mandatory=$true)]
+		[Object]$H_Hives
+	)
+	foreach($O_Hive in $H_Hives.getEnumerator()) {
+		$A_Keys = $O_Hive.Value
+		$S_Path = $O_Hive.Name
 
-	Reg-AddKey $k
-	Reg-AddItem $v $k
-
+		Hive_AddKey $S_Path
+		Hive_AddItem $A_Keys $S_Path
+	}
 }
+
+function DisableService{
+	param(
+		[parameter(Mandatory=$true)]
+		[String[]]$S_Services
+	)
+	foreach( $S_Service in $S_Services) {
+		Suspend-Service -Name $S_Service -Verbose 2> $null
+		Stop-Service -Name $S_Service -Force -Verbose
+		Set-Service -Name $S_Service -Startup Disabled -Status Stopped -Verbose
+	}
+}
+
+function main {
+	DisableService $A_SERVICES
+	EditHive $H_HIVE
+}
+
+main
