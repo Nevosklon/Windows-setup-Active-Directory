@@ -1,8 +1,8 @@
 # The Hive rooot path range
-$I_HIVEROOT = 6
+$global:I_HIVEROOT = 6
 
 # Regestry key to be modified and added
-$H_HIVE=[ordered]@{
+$global:H_HIVE=[ordered]@{
 	"HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization"=@(
 		@{name="NoLockScreen"; type="DWord"; value=1}
 	);
@@ -19,7 +19,7 @@ $H_HIVE=[ordered]@{
 	"HKCU:\Control Panel\Desktop"=@(
 		@{name="MenuShowDelay"; type="String"; value=0},
 		@{name="WallPaper"; type="String"; value=0},
-		@{name="CursorBlinkRate"; type="DWord"; value=-1}
+		@{name="CursorBlinkRate"; type="DWord"; value="-1"}
 	);
 	"HKCU:\Software\Policies\Microsoft\Windows\Explorer"=@(
 		@{name="DisableSearchBoxSuggestions"; type="DWord"; value=1}
@@ -121,8 +121,8 @@ function DisableService{
 }
 
 function main {
-	DisableService $A_SERVICES
-	EditHive $H_HIVE
+	DisableService $global:A_SERVICES
+	EditHive $global:H_HIVE
 }
 
 main
