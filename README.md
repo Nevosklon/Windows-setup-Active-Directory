@@ -1,6 +1,5 @@
 ﻿# Window-Setup + Active-Directory
- 
----
+
 ## Description
 A Simple Script powershell script for 
 Lab Active Directory Assessment
